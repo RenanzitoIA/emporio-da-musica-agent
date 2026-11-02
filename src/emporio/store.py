@@ -22,6 +22,13 @@ CREATE TABLE IF NOT EXISTS messages (
     message TEXT NOT NULL            -- OpenAI chat message as JSON
 );
 CREATE INDEX IF NOT EXISTS idx_messages_session ON messages(session_id, id);
+CREATE TABLE IF NOT EXISTS feedback (
+    session_id TEXT NOT NULL,
+    turn INTEGER NOT NULL,           -- 1-based index of the assistant answer in the session
+    score INTEGER NOT NULL,          -- 1 = thumbs up, 0 = thumbs down
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (session_id, turn)
+);
 CREATE TABLE IF NOT EXISTS tickets (
     id TEXT PRIMARY KEY,
     created_at TEXT NOT NULL,
@@ -65,6 +72,20 @@ class Store:
     def clear(self, session_id: str) -> None:
         with self._lock, self._db:
             self._db.execute("DELETE FROM messages WHERE session_id = ?", (session_id,))
+
+    # ------------------------------------------------------------ feedback
+    def save_feedback(self, session_id: str, turn: int, score: int) -> None:
+        with self._lock, self._db:
+            self._db.execute(
+                "INSERT OR REPLACE INTO feedback VALUES (?, ?, ?, ?)",
+                (session_id, turn, score, datetime.now().isoformat(timespec="seconds")),
+            )
+
+    def get_feedback(self, session_id: str) -> dict[int, int]:
+        rows = self._db.execute(
+            "SELECT turn, score FROM feedback WHERE session_id = ?", (session_id,)
+        ).fetchall()
+        return dict(rows)
 
     # ------------------------------------------------------------ tickets
     def create(self, kind: str, summary: str, order_id=None, contact=None, session_id=None) -> str:

@@ -55,7 +55,9 @@ def test_tool_round_trip_and_history():
         answer("O Takamine GD20 sai por R$ 2.199,00."),
         answer("De nada!"),
     ])
-    reply = agent.chat("Quanto custa o Takamine GD20?")
+    seen = []
+    reply = agent.chat("Quanto custa o Takamine GD20?", on_tool_call=lambda n, a: seen.append(n))
+    assert seen == ["search_products"]
     assert reply.text.startswith("O Takamine GD20")
     assert reply.tool_calls[0].name == "search_products"
     assert reply.tool_calls[0].result["produtos"][0]["preco_tabela"] == "R$ 2.199,00"
@@ -97,3 +99,10 @@ def test_store_hours():
     assert "sábado às 9h" in store_status(datetime(2026, 3, 27, 19, 0))       # Fri night -> Sat
     assert "segunda-feira às 9h" in store_status(datetime(2026, 3, 28, 14, 0))  # Sat afternoon
     assert "Data e hora: segunda-feira, 23/03/2026" in build_system_prompt(datetime(2026, 3, 23, 10))
+
+
+def test_feedback_roundtrip():
+    store = Store(":memory:")
+    store.save_feedback("s1", 1, 1)
+    store.save_feedback("s1", 1, 0)  # user changed their mind
+    assert store.get_feedback("s1") == {1: 0}

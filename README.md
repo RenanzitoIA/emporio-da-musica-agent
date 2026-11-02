@@ -40,7 +40,7 @@ Three interfaces, all on top of the same agent core:
 | Interface | Command | Notes |
 |---|---|---|
 | CLI | `python -m emporio.cli --debug` | `--debug` prints every tool call. `/novo` starts a new conversation. |
-| Web chat (Streamlit) | `streamlit run app.py` | Sidebar shows model, simulated date and an option to display tool calls. |
+| Web chat (Streamlit) | `streamlit run app.py` | Branded UI: live progress of each system lookup, typing effect, 👍/👎 feedback saved to SQLite, conversation kept in the URL across reloads, "technical mode" showing raw tool calls. |
 | HTTP API (FastAPI) | `uvicorn emporio.api:app --reload` | Docs at `http://localhost:8000/docs`. |
 
 API example:

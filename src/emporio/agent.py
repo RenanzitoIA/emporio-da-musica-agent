@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Callable
 
 from openai import OpenAI
 
@@ -50,7 +50,10 @@ class Agent:
         self.tools = StoreTools(data or StoreData.load(), now=self.settings.now, tickets=self.store)
         self.schemas = tool_schemas(self.tools.categories)
 
-    def chat(self, message: str, session_id: str | None = None) -> Reply:
+    def chat(self, message: str, session_id: str | None = None,
+             on_tool_call: Callable[[str, dict[str, Any]], None] | None = None) -> Reply:
+        """Answer one user message. `on_tool_call(name, args)` fires before each tool
+        runs, so a UI can show live progress ("searching the catalog...")."""
         session_id = session_id or Store.new_session_id()
         history = _trim(self.store.load(session_id))
         new: list[dict[str, Any]] = [{"role": "user", "content": message}]
@@ -72,6 +75,8 @@ class Agent:
 
             new.append(msg.model_dump(include={"role", "content", "tool_calls"}, exclude_none=True))
             for tc in msg.tool_calls:
+                if on_tool_call:
+                    on_tool_call(tc.function.name, _loads(tc.function.arguments))
                 output = dispatch(self.tools, tc.function.name, tc.function.arguments, session_id)
                 log.info("tool %s(%s) -> %s", tc.function.name, tc.function.arguments, output[:200])
                 calls.append(ToolCall(tc.function.name, _loads(tc.function.arguments), _loads(output)))
