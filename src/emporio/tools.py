@@ -128,12 +128,6 @@ class StoreTools:
         if max_price is not None:
             df = df[df["_final"] <= max_price]
 
-        hidden_unavailable = 0
-        if only_available:
-            sellable = df.apply(self._sellable, axis=1).astype(bool)
-            hidden_unavailable = int((~sellable).sum())
-            df = df[sellable]
-
         if query:
             tokens = [t for t in normalize(query).split() if len(t) > 1 and t not in STOPWORDS]
 
@@ -148,6 +142,18 @@ class StoreTools:
         else:
             df = df.sort_values("_final")
 
+        hidden_unavailable = 0
+        unavailable_matches: list[dict[str, Any]] = []
+        if only_available:
+            sellable = df.apply(self._sellable, axis=1).astype(bool)
+            hidden_unavailable = int((~sellable).sum())
+            if query:
+                # A customer asking for a specific model must hear "out of stock",
+                # not "not found": report strong unavailable matches explicitly.
+                strong = df[~sellable & (df["_score"] >= 1.0)]
+                unavailable_matches = [self._product_summary(r) for _, r in strong.head(3).iterrows()]
+            df = df[sellable]
+
         total = len(df)
         results = [self._product_summary(r) for _, r in df.head(limit).iterrows()]
         out: dict[str, Any] = {"total_encontrado": total, "produtos": results}
@@ -155,7 +161,9 @@ class StoreTools:
             out["aviso"] = f"Mostrando {limit} de {total}. Refine a busca se necessário."
         if only_available and hidden_unavailable:
             out["ocultos_indisponiveis"] = hidden_unavailable
-        if not results:
+        if unavailable_matches:
+            out["modelos_procurados_indisponiveis"] = unavailable_matches
+        if not results and not unavailable_matches:
             out["aviso"] = (
                 "Nenhum produto encontrado com esses critérios. Não invente produtos; "
                 "ofereça alternativas próximas ou outra busca."
@@ -173,6 +181,12 @@ class StoreTools:
             especificacoes=row["specs"],
             estoque=int(row["stock_quantity"]) if row["status"] == "active" else 0,
         )
+        promos = self.data.promotions
+        ended = promos[(promos["product_id"] == row["product_id"]) & ~promos["is_active"]]
+        if not ended.empty:
+            details["promocoes_encerradas"] = [
+                f"{p.description} ({p.discount_percent:.0f}%)" for p in ended.itertuples()
+            ]
         if not self._sellable(row):
             similar = self.search_products(
                 category=row["category"],
@@ -284,6 +298,10 @@ class StoreTools:
             out["observacao_interna"] = order["notes"]
         if status == "delivered":
             out["prazos_pos_venda"] = _after_sale_windows(order, today)
+            out["como_falar_das_datas"] = (
+                "O sistema não registra a data real de entrega. Diga 'previsão de entrega' (não 'entregue em') "
+                "e que a equipe confirma a data exata ao analisar o caso."
+            )
         if status in {"pending", "confirmed"}:
             out["proximo_passo"] = "Ainda não foi enviado; o rastreio é enviado por e-mail e WhatsApp no despacho."
         return out
@@ -313,9 +331,16 @@ def _identity_matches(customer, provided: str) -> bool:
     phone = digits(provided)
     if len(phone) >= 8:
         return customer["phone_digits"].endswith(phone[-8:])
-    tokens = normalize(provided).split()
-    # Require at least first name + one more name to avoid guessing by first name only.
-    return len(tokens) >= 2 and all(t in customer["name_key"].split() for t in tokens)
+    given = normalize(provided).split()
+    registered = customer["name_key"].split()
+    # First AND last name must match (middle names optional): "Ana Ferreira" ok for
+    # "Ana Carolina Ferreira", but "Carolina Ferreira" or "Ana" alone are not.
+    return (
+        len(given) >= 2
+        and given[0] == registered[0]
+        and given[-1] == registered[-1]
+        and all(t in registered for t in given)
+    )
 
 
 def _after_sale_windows(order, today: pd.Timestamp) -> dict[str, str]:
@@ -368,13 +393,14 @@ def tool_schemas(categories: list[str]) -> list[dict[str, Any]]:
                 "category": {"type": ["string", "null"], "enum": categories + [None], "description": "Categoria exata, se o cliente indicou uma."},
                 "min_price": {"type": ["number", "null"], "description": "Preço mínimo em reais (considera preço promocional)."},
                 "max_price": {"type": ["number", "null"], "description": "Preço máximo em reais (considera preço promocional)."},
-                "only_available": {"type": "boolean", "description": "true = só itens à venda com estoque. Use false para checar um modelo específico que pode estar esgotado/descontinuado."},
+                "only_available": {"type": "boolean", "description": "true = só itens à venda com estoque (modelos procurados que estão esgotados/descontinuados vêm em 'modelos_procurados_indisponiveis'). false = inclui indisponíveis."},
             },
             ["query", "category", "min_price", "max_price", "only_available"],
         ),
         fn(
             "get_product_details",
-            "Detalhes completos de um produto (descrição, especificações, estoque) e alternativas se estiver indisponível.",
+            "Detalhes completos de um produto: descrição, especificações, estoque, promoções encerradas "
+            "e alternativas se estiver indisponível. Use quando o cliente perguntar sobre uma promoção específica.",
             {"product_id": {"type": "integer"}},
             ["product_id"],
         ),
@@ -413,10 +439,11 @@ def tool_schemas(categories: list[str]) -> list[dict[str, Any]]:
         ),
         fn(
             "open_ticket",
-            "Registra um chamado para a equipe humana: reclamação, pedido de troca/devolução, atraso, "
-            "ou quando o cliente pede um atendente. Confirme com o cliente antes de abrir.",
+            "Registra um chamado para a equipe humana: reclamação, troca/devolução, atraso, cliente que "
+            "quer fechar uma compra (interesse_compra) ou que pede um atendente. Só chame DEPOIS que o "
+            "cliente disser explicitamente que quer o chamado nesta conversa.",
             {
-                "kind": {"type": "string", "enum": ["reclamacao", "troca_devolucao", "atraso_entrega", "atendimento_humano", "outro"]},
+                "kind": {"type": "string", "enum": ["reclamacao", "troca_devolucao", "atraso_entrega", "interesse_compra", "atendimento_humano", "outro"]},
                 "summary": {"type": "string", "description": "Resumo objetivo do caso para a equipe."},
                 "order_id": {"type": ["integer", "null"]},
                 "contact": {"type": ["string", "null"], "description": "Nome e telefone/e-mail para retorno, se informados."},

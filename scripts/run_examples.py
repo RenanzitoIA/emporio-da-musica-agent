@@ -39,7 +39,7 @@ SCENARIOS = [
     ]),
     ("05-pedido-atrasado-e-chamado", "Failed verification, late delivery, complaint ticket, out-of-stock product", [
         "Cadê meu pedido 8? Era pra ter chegado faz tempo",
-        "Ana Ferreira",
+        "Ana Souza",
         "Meu telefone é (67) 99654-7821",
         "Quero registrar uma reclamação, pode ser?",
         "Pode abrir sim. Aproveitando: o violão Giannini GF-3D tem em estoque?",

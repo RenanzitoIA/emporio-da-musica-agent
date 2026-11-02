@@ -111,3 +111,20 @@ def test_delivered_order_return_windows(tools):
 
 def test_search_handles_accents_and_plurals(tools):
     assert tools.search_products(query="violao nylon eletrico")["produtos"][0]["categoria"] == "Violões"
+
+
+def test_identity_requires_first_and_last_name(tools):
+    # Order 8 belongs to "Ana Carolina Ferreira".
+    assert tools.lookup_order(8, "Ana Ferreira")["pedido"] == 8
+    assert "erro" in tools.lookup_order(8, "Carolina Ferreira")
+    assert "erro" in tools.lookup_order(8, "Ana")
+    assert "erro" in tools.lookup_order(8, "Ana Souza")
+
+
+def test_out_of_stock_model_is_reported_not_hidden(tools):
+    result = tools.search_products(query="Giannini GF-3D", only_available=True)
+    assert result["modelos_procurados_indisponiveis"][0]["disponibilidade"] == "esgotado no momento"
+
+
+def test_ended_promotions_are_listed(tools):
+    assert tools.get_product_details(95)["promocoes_encerradas"] == ["Oferta Especial (12%)"]
