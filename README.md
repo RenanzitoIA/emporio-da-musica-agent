@@ -18,6 +18,8 @@ Lia:     Direito de arrependimento (7 dias após o recebimento): já expirou...
 
 Full conversations: [`examples/`](examples/).
 
+![Streamlit UI with the tool calls panel open](docs/streamlit.jpg)
+
 ---
 
 ## Quickstart

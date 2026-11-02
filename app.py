@@ -13,6 +13,11 @@ from emporio.store import Store  # noqa: E402
 st.set_page_config(page_title="Empório da Música", page_icon="🎸")
 
 
+def md(text: str) -> str:
+    """Escape '$' so Streamlit does not render "R$ 10 ... R$ 20" as LaTeX math."""
+    return text.replace("$", r"\$")
+
+
 @st.cache_resource
 def get_agent() -> Agent:
     return Agent()
@@ -45,17 +50,17 @@ turn = 0
 for msg in agent.store.load(session_id):
     if msg["role"] == "user":
         turn += 1
-        st.chat_message("user").write(msg["content"])
+        st.chat_message("user").markdown(md(msg["content"]))
     elif msg["role"] == "assistant" and msg.get("content"):
         with st.chat_message("assistant"):
             if show_tools and tool_log.get(turn):
                 with st.expander(f"{len(tool_log[turn])} consulta(s) ao sistema"):
                     for call in tool_log[turn]:
                         st.code(f"{call.name}({call.arguments})", language="python")
-            st.write(msg["content"])
+            st.markdown(md(msg["content"]))
 
 if prompt := st.chat_input("Escreva sua mensagem..."):
-    st.chat_message("user").write(prompt)
+    st.chat_message("user").markdown(md(prompt))
     with st.chat_message("assistant"), st.spinner("Consultando..."):
         reply = agent.chat(prompt, session_id=session_id)
     tool_log[turn + 1] = reply.tool_calls
