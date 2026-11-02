@@ -18,7 +18,7 @@ Lia:     Direito de arrependimento (7 dias após o recebimento): já expirou...
 
 Full conversations: [`examples/`](examples/).
 
-![Streamlit UI with the tool calls panel open](docs/streamlit.jpg)
+![Web chat: live tool chips, technical mode on, return policy applied to order 7](docs/web-ui.jpg)
 
 ---
 
@@ -39,9 +39,9 @@ Three interfaces, all on top of the same agent core:
 
 | Interface | Command | Notes |
 |---|---|---|
+| **Web chat** | `uvicorn emporio.api:app --reload`, then open http://localhost:8000 | Each system lookup appears live as the agent works, the answer is typed out, 👍/👎 feedback is saved, the conversation survives a page reload (session id in the URL), and a "technical mode" shows the raw tool calls. Works on mobile. |
+| HTTP API | same server, docs at http://localhost:8000/docs | `POST /chat` (JSON) and `POST /chat/stream` (Server-Sent Events). |
 | CLI | `python -m emporio.cli --debug` | `--debug` prints every tool call. `/novo` starts a new conversation. |
-| Web chat (Streamlit) | `streamlit run app.py` | Branded UI: live progress of each system lookup, typing effect, 👍/👎 feedback saved to SQLite, conversation kept in the URL across reloads, "technical mode" showing raw tool calls. |
-| HTTP API (FastAPI) | `uvicorn emporio.api:app --reload` | Docs at `http://localhost:8000/docs`. |
 
 API example:
 
@@ -55,7 +55,7 @@ curl -X POST localhost:8000/chat -H "Content-Type: application/json" \
 Other commands:
 
 ```bash
-pytest                              # 22 tests, no API key needed (OpenAI client is faked)
+pytest                              # 25 tests, no API key needed (OpenAI client is faked)
 python -m emporio.audit             # data-quality report on the CSVs
 python scripts/run_examples.py      # regenerates examples/ against the real model
 python scripts/extract_policies.py  # regenerates data/processed/store_policies.md from the PDF
@@ -76,7 +76,7 @@ python scripts/extract_policies.py  # regenerates data/processed/store_policies.
 ## Architecture
 
 ```
-                 ┌──────────── CLI ─────────── Streamlit ─────────── FastAPI ────────────┐
+                 ┌──────────── CLI ───────── Web chat (web/) ─────── FastAPI ─────────────┐
                  │                                                                        │
                  ▼                                                                        │
           Agent.chat(message, session_id)          (src/emporio/agent.py, ~60-line loop)  │
@@ -100,7 +100,9 @@ src/emporio/
   prompts.py   system prompt (persona, rules, policy manual, store status)
   agent.py     function-calling loop, history window, loop guard
   store.py     SQLite persistence (history, tickets)
-  cli.py / api.py / ../../app.py   interfaces
+  cli.py       terminal chat
+  api.py       FastAPI: /chat, /chat/stream (SSE), history, feedback, tickets; serves web/
+web/             web chat: plain HTML/CSS/JS, no build step
 data/raw/        original challenge files (untouched)
 data/processed/  policy manual extracted to text + interpretation notes
 docs/iterations/ outputs of each evaluation round (see Evaluation)
@@ -192,7 +194,23 @@ instruction to turn them into a customer-friendly explanation.
   example "say *estimated* delivery date"). During evaluation the model followed these more
   reliably than the same rule placed only in the system prompt.
 
-### 7. Conversation history
+### 7. Web chat: plain HTML/CSS/JS served by FastAPI
+
+The first version used Streamlit. I replaced it because Streamlit re-runs the whole script
+on every interaction: the screen flickers, the layout is hard to control, and it cannot show
+the agent's progress *while* it works. The new web chat is three static files with no
+framework and no build step, served by the same FastAPI app:
+
+- `POST /chat/stream` sends Server-Sent Events. A `tool` event fires before each tool runs,
+  through an `on_tool_call` hook in the agent, and a `done` event carries the answer. The
+  customer sees "Verificando identidade · pedido #7" instead of a spinner, which makes
+  waiting feel shorter and shows *what* the agent checked.
+- Markdown is rendered by a small renderer that escapes HTML first, so model output cannot
+  inject markup.
+- The visual language (type, neutrals, card-in-card surfaces) comes from my agency's site,
+  with the store's amber as the only accent.
+
+### 8. Conversation history
 
 The history is stored per `session_id` in SQLite, including tool messages, so follow-ups
 like "and how much in installments?" work. A sliding window (last 40 messages, never cut in
@@ -258,11 +276,11 @@ Other cleaning:
 
 Two layers:
 
-1. **Unit tests (22, offline):**
+1. **Unit tests (25, offline):**
    - every pricing, promotion, installment, identity-check and return-window rule;
    - the agent loop with a scripted fake OpenAI client: tool round-trip, history, tickets,
      unknown tool, loop guard;
-   - the API.
+   - the API, including the SSE stream, history, feedback and serving the web page.
 2. **Scenario runs against the real model:** `scripts/run_examples.py` runs 5 multi-turn
    conversations. Each round's output is kept in [`docs/iterations/`](docs/iterations/), so
    the changes between rounds can be compared.
@@ -309,8 +327,9 @@ Example conversations (final round), each covering a different kind of request:
   CRM or helpdesk and notify the team.
 - **Data is read-only CSV** loaded at startup. Production would query the store's database
   or ERP, with short caching for stock.
-- **No streaming** in the UI or API, and the API has no authentication or per-session rate
-  limit.
+- **Answer text is not token-streamed**: tool progress streams live, but the final answer
+  arrives whole and is then typed out on screen. The API has no authentication or
+  per-session rate limit.
 - **Channel:** the natural deployment is WhatsApp (the manual's main channel). The FastAPI
   `/chat` endpoint is ready to sit behind a WhatsApp webhook, with the phone number as
   `session_id`, which would also give a verified identity.
@@ -330,7 +349,8 @@ The workflow:
 2. **Decisions before code.** Claude proposed options with trade-offs, and I chose:
    - the raw OpenAI SDK instead of a framework;
    - `gpt-5-mini`;
-   - three interfaces (CLI, Streamlit and FastAPI) on one core;
+   - three interfaces on one core, and later replacing Streamlit with a custom web chat in
+     the style of my agency's site;
    - order verification by order number plus name or phone, for LGPD.
 3. **Small, tested steps.** Each layer (data, tools, agent, interfaces) was written,
    unit-tested and committed separately. The commit history shows this.

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Empório da Música · Atendimento</title>
+  <meta name="description" content="Lia, assistente virtual da Empório da Música">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23131313'/><circle cx='16' cy='16' r='6' fill='%23E8892B'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <div class="shell">
+    <!-- ============ Side panel ============ -->
+    <aside class="panel" id="panel">
+      <div class="panel-top">
+        <a class="brand" href="/" aria-label="Empório da Música">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M9 18V6l10-2v12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="18" r="2.5" stroke="currentColor" stroke-width="1.8"/><circle cx="16.5" cy="16" r="2.5" stroke="currentColor" stroke-width="1.8"/></svg>
+          </span>
+          <span>
+            <span class="brand-name">Empório da Música</span>
+            <span class="brand-tag">Sua música começa aqui.</span>
+          </span>
+        </a>
+        <button class="icon-btn panel-close" id="panelClose" aria-label="Fechar painel">✕</button>
+      </div>
+
+      <div class="panel-cards">
+        <section class="pcard">
+          <p class="eyebrow eyebrow-dark">Loja física</p>
+          <div class="status" id="storeStatus"><span class="dot"></span><span>Carregando…</span></div>
+          <p class="pcard-sub" id="storeStatusSub"></p>
+        </section>
+        <section class="pcard">
+          <p class="eyebrow eyebrow-dark">Horários</p>
+          <dl class="hours">
+            <div><dt>Seg a sex</dt><dd>9h às 18h</dd></div>
+            <div><dt>Sábado</dt><dd>9h às 13h</dd></div>
+            <div><dt>Dom e feriados</dt><dd>Fechado</dd></div>
+          </dl>
+        </section>
+        <section class="pcard">
+          <p class="eyebrow eyebrow-dark">Contato</p>
+          <p class="pcard-text">Rua 14 de Maio, 3200 · Centro<br>Campo Grande · MS</p>
+          <p class="pcard-text">WhatsApp <strong>(67) 3321-4500</strong></p>
+        </section>
+      </div>
+
+      <div class="panel-bottom">
+        <button class="pill pill-light" id="newChat"><span>Nova conversa</span><span class="pill-dot" aria-hidden="true"></span></button>
+        <label class="switch">
+          <input type="checkbox" id="techMode">
+          <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+          <span class="switch-label">Modo técnico</span>
+        </label>
+        <p class="panel-meta" id="meta"></p>
+      </div>
+    </aside>
+
+    <!-- ============ Chat ============ -->
+    <main class="chat">
+      <header class="chat-header">
+        <button class="icon-btn menu-btn" id="panelOpen" aria-label="Abrir painel">
+          <svg viewBox="0 0 20 20" fill="none"><path d="M3 6h14M3 10h14M3 14h9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+        <div class="agent">
+          <span class="agent-avatar" id="agentInitial">L</span>
+          <div>
+            <p class="agent-name"><span id="agentName">Lia</span> <span class="agent-role">· assistente virtual</span></p>
+            <p class="agent-sub"><span class="live-dot"></span> Consulta estoque, preços e pedidos em tempo real</p>
+          </div>
+        </div>
+        <span class="tag" id="simDate"></span>
+      </header>
+
+      <section class="scroll" id="scroll" aria-live="polite">
+        <div class="thread" id="thread">
+          <!-- Welcome -->
+          <div class="welcome" id="welcome">
+            <p class="eyebrow">Atendimento Empório da Música</p>
+            <h1 class="hero-title">Oi, eu sou a <span id="heroName">Lia</span>.<br><span class="tone">Como posso te ajudar hoje?</span></h1>
+            <p class="hero-sub">Escolho instrumento com você, confiro preço, estoque e promoções, acompanho seu pedido e explico trocas, pagamento e entrega.</p>
+            <div class="suggestions" id="suggestions"></div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="composer-wrap">
+        <form class="composer" id="composer" autocomplete="off">
+          <textarea id="input" rows="1" maxlength="2000" placeholder="Escreva para a Lia…" aria-label="Mensagem"></textarea>
+          <button class="send" id="send" type="submit" aria-label="Enviar">
+            <svg viewBox="0 0 16 16" fill="none"><path d="M5 11 11 5M6 5h5v5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </form>
+        <p class="fineprint">A Lia é uma assistente virtual. Preços e estoque vêm do sistema da loja; trocas e reembolsos são feitos pela equipe.</p>
+      </footer>
+    </main>
+  </div>
+  <div class="scrim" id="scrim"></div>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
