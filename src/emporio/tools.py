@@ -163,6 +163,10 @@ class StoreTools:
             out["ocultos_indisponiveis"] = hidden_unavailable
         if unavailable_matches:
             out["modelos_procurados_indisponiveis"] = unavailable_matches
+            out["orientacao"] = (
+                "A loja não faz reserva nem aviso de reposição. Informe a indisponibilidade e "
+                "ofereça as alternativas disponíveis."
+            )
         if not results and not unavailable_matches:
             out["aviso"] = (
                 "Nenhum produto encontrado com esses critérios. Não invente produtos; "
@@ -355,7 +359,7 @@ def _after_sale_windows(order, today: pd.Timestamp) -> dict[str, str]:
 
     def window(days_passed: int, limit: int) -> str:
         left = limit - days_passed
-        return f"dentro do prazo (faltam {left} dias)" if left >= 0 else f"fora do prazo ({-left} dias atrás)"
+        return f"dentro do prazo (faltam {left} dias)" if left >= 0 else f"fora do prazo (venceu há {-left} dias)"
 
     return {
         "recebimento_considerado": received.strftime("%d/%m/%Y") + " (data estimada de entrega)",

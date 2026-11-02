@@ -2,35 +2,45 @@
 
 > Store info from the policy manual + out-of-scope requests
 >
-> Session `b42fb10ef31a`
+> Session `13c80cc06faa`
 
 **Cliente:** Qual o endereço da loja? Vocês abrem domingo?
 
-**Lia:** Oi — eu sou a Lia, assistente virtual da Empório da Música. Tudo bem? 
+**Lia:** Oi! Sou a Lia, assistente virtual da Empório da Música — prazer 😊
 
-O endereço da loja é:
+Endereço:
 Rua 14 de Maio, 3200 — Centro, Campo Grande - MS, 79202-333.
 
-Sobre domingo: a loja fica fechada aos domingos e feriados. Nosso horário normal é:
-- Segunda a sexta: 09:00 às 18:00
-- Sábado: 09:00 às 13:00
+Horário de funcionamento:
+- Segunda a sexta: 09:00 às 18:00  
+- Sábado: 09:00 às 13:00  
+- Domingo e feriados: fechado
 
-Quer que eu te passe o número do WhatsApp da loja ou o telefone fixo para contato? 📞
+Quer que eu passe o WhatsApp da loja ou te mando as orientações de como chegar?
 
 ---
 
 **Cliente:** Vocês vendem cordas e palhetas?
 
-**Lia:** A gente não vende acessórios como cordas, palhetas, cabos, cases ou pedais — trabalhamos só com instrumentos. 😊
+**Lia:** A gente trabalha só com instrumentos musicais — não vendemos acessórios como cordas, palhetas, cabos, cases ou pedais. 😊
 
-Quer que eu indique algumas lojas parceiras ou lojas online onde você encontra cordas e palhetas?
+Posso:
+- Indicar o WhatsApp da loja caso queira informações sobre algum instrumento: (67) 3321-4500; ou
+- Ajudar a encontrar um violão/baixo/guitarra que já venha com cordas de fábrica?
+
+O que prefere?
 
 ---
 
 **Cliente:** E você me passa uma receita de bolo de cenoura?
 
-**Lia:** Desculpa, não posso ajudar com receitas — aqui eu só atendo assuntos da loja (instrumentos musicais). 🎵
+**Lia:** Poxa, não posso ajudar com receitas — meu foco é instrumentos e assuntos da loja. 😊
 
-Quer que eu te indique lojas para comprar cordas e palhetas ou procure um violão/baixo pra você?
+Se quiser, posso:
+- Indicar violões/guitarras/teclados pra tocar enquanto assa o bolo;
+- Passar dicas de músicas fáceis pra tocar em uma reunião com família;
+- Abrir um chamado pra um atendente humano se precisar de algo fora do nosso catálogo.
+
+Qual dessas opções prefere?
 
 ---
